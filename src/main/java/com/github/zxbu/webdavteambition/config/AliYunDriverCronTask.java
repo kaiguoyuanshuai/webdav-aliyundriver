@@ -19,7 +19,7 @@ public class AliYunDriverCronTask {
     public void refreshToken() {
         try {
             TFile root = aliYunDriverClientService.getTFileByPath("/");
-            aliYunDriverClientService.getTFiles(root.getFile_id());
+            aliYunDriverClientService.getTFiles(root.getFile_id(), null);
         } catch (Exception e) {
             // nothing
         }

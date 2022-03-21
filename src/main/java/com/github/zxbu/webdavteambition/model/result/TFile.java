@@ -20,6 +20,7 @@ public class TFile {
     private String url;
     private Long size;
     private String download_url;
+    private String share_id;
 
     public Date getCreated_at() {
         return created_at;
@@ -147,5 +148,14 @@ public class TFile {
 
     public void setUpdated_at(Date updated_at) {
         this.updated_at = updated_at;
+    }
+
+    public String getShare_id() {
+        return share_id;
+    }
+
+    public TFile setShare_id(String share_id) {
+        this.share_id = share_id;
+        return this;
     }
 }

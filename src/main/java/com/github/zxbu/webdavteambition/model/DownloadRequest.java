@@ -2,7 +2,9 @@ package com.github.zxbu.webdavteambition.model;
 
 public class DownloadRequest {
     private String drive_id;
+    private String share_id;
     private String file_id;
+    private String shareToken;
     private Integer expire_sec = 14400;
 
     public String getDrive_id() {
@@ -27,5 +29,23 @@ public class DownloadRequest {
 
     public void setExpire_sec(Integer expire_sec) {
         this.expire_sec = expire_sec;
+    }
+
+    public String getShare_id() {
+        return share_id;
+    }
+
+    public DownloadRequest setShare_id(String share_id) {
+        this.share_id = share_id;
+        return this;
+    }
+
+    public String getShareToken() {
+        return shareToken;
+    }
+
+    public DownloadRequest setShareToken(String shareToken) {
+        this.shareToken = shareToken;
+        return this;
     }
 }

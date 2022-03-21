@@ -136,7 +136,7 @@ public class AliYunDriverFileSystemStore implements IWebdavStore {
         if (tFile.getType().equals(FileType.file.name())) {
             return new String[0];
         }
-        Set<TFile> tFileList = aliYunDriverClientService.getTFiles(tFile.getFile_id());
+        Set<TFile> tFileList = aliYunDriverClientService.getTFiles(tFile.getFile_id(), tFile.getShare_id());
         return tFileList.stream().map(TFile::getName).toArray(String[]::new);
     }
 
