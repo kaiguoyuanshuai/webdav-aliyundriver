@@ -146,16 +146,16 @@ public class AliYunDriverClient {
     }
 
     public String post(String url, Object body) {
-        return post(url, body, null);
+        return post(url, body, null, null);
     }
 
-    public String post(String url, Object body, String shareId) {
+    public String post(String url, Object body, String shareId, String sharePassword) {
         String bodyAsJson = JsonUtil.toJson(body);
         Request.Builder requestBuilder = new Request.Builder()
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyAsJson))
                 .url(getTotalUrl(url));
         if (shareId != null){
-            requestBuilder.header("X-Share-Token", readShareToken(shareId));
+            requestBuilder.header("X-Share-Token", readShareToken(shareId, sharePassword));
         }
         Request request = requestBuilder.build();
         try (Response response = okHttpClient.newCall(request).execute()){
@@ -220,13 +220,15 @@ public class AliYunDriverClient {
         return aliYunDriveProperties.getUrl() + url;
     }
 
-    public synchronized String readShareToken(String shareId){
-        ShareTokenResult result = shareTokenMapping.get(shareId);
+    public synchronized String readShareToken(String shareId, String sharePassword){
+        // shareKey 为 sharePassword == null ? shareId : shareId + ":" + sharePassword
+        ShareTokenResult result = shareTokenMapping.get(shareId + ":" + sharePassword);
         if (result != null && result.getExpire_time().after(new Date())){
             return result.getShare_token();
         }
         ShareTokenRequest request = new ShareTokenRequest();
         request.setShare_id(shareId);
+        request.setShare_pwd(sharePassword == null ? "" : sharePassword);
         String resultString = post("/share_link/get_share_token", request);
         result = JsonUtil.readValue(resultString, ShareTokenResult.class);
         shareTokenMapping.put(shareId, result);
