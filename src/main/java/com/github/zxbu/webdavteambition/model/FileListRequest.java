@@ -2,12 +2,22 @@ package com.github.zxbu.webdavteambition.model;
 
 public class FileListRequest extends Page{
     private String drive_id;
+    private String share_id;
     private Boolean all = false;
     private String fields = "*";
     private String image_thumbnail_process = "image/resize,w_400/format,jpeg";
     private String image_url_process = "image/resize,w_1920/format,jpeg";
     private String parent_file_id;
     private String video_thumbnail_process = "video/snapshot,t_0,f_jpg,ar_auto,w_300";
+
+    public String getShare_id() {
+        return share_id;
+    }
+
+    public FileListRequest setShare_id(String share_id) {
+        this.share_id = share_id;
+        return this;
+    }
 
     public String getDrive_id() {
         return drive_id;

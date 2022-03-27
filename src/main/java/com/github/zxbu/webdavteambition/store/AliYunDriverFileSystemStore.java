@@ -21,11 +21,14 @@ import java.security.Principal;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class AliYunDriverFileSystemStore implements IWebdavStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AliYunDriverFileSystemStore.class);
 
     private static AliYunDriverClientService aliYunDriverClientService;
+
+    private final Pattern inSharePatten = Pattern.compile(".*!(?<shareId>[a-zA-Z0-9]{11})(?>\\/.|:(?<password>[a-zA-Z0-9]{4})\\/.)");
 
     public AliYunDriverFileSystemStore(File file) {
     }
@@ -68,14 +71,18 @@ public class AliYunDriverFileSystemStore implements IWebdavStore {
     @Override
     public void createFolder(ITransaction transaction, String folderUri) {
         LOGGER.info("createFolder {}", folderUri);
-
+        if (inSharePatten.matcher(folderUri).find()){
+            throw new WebdavException("共享目录不可写");
+        }
         aliYunDriverClientService.createFolder(folderUri);
     }
 
     @Override
     public void createResource(ITransaction transaction, String resourceUri) {
         LOGGER.info("createResource {}", resourceUri);
-
+        if (inSharePatten.matcher(resourceUri).find()){
+            throw new WebdavException("共享目录不可写");
+        }
     }
 
     @Override
@@ -103,6 +110,9 @@ public class AliYunDriverFileSystemStore implements IWebdavStore {
     @Override
     public long setResourceContent(ITransaction transaction, String resourceUri, InputStream content, String contentType, String characterEncoding) {
         LOGGER.info("setResourceContent {}", resourceUri);
+        if (inSharePatten.matcher(resourceUri).find()){
+            throw new WebdavException("共享目录不可写");
+        }
         HttpServletRequest request = transaction.getRequest();
         HttpServletResponse response = transaction.getResponse();
 
@@ -136,7 +146,7 @@ public class AliYunDriverFileSystemStore implements IWebdavStore {
         if (tFile.getType().equals(FileType.file.name())) {
             return new String[0];
         }
-        Set<TFile> tFileList = aliYunDriverClientService.getTFiles(tFile.getFile_id());
+        Set<TFile> tFileList = aliYunDriverClientService.getTFiles(tFile.getFile_id(), tFile.getShare_id(), tFile.getShare_password());
         return tFileList.stream().map(TFile::getName).toArray(String[]::new);
     }
 
@@ -160,13 +170,20 @@ public class AliYunDriverFileSystemStore implements IWebdavStore {
     @Override
     public void removeObject(ITransaction transaction, String uri) {
         LOGGER.info("removeObject: {}", uri);
+        if (inSharePatten.matcher(uri).find()){
+            // 对于共享文件夹内的删除进行跳过，因为在删除共享目录时候用户使用 rm -r 'Test!Pfb5mXu2TLK' 之类的命令或者使用 GUI 删除都会递归删除子文件，如果这里报错就会导致本身的文件夹也无法删除
+            LOGGER.info("removeObject skip: {}", uri);
+            return;
+        }
         aliYunDriverClientService.remove(uri);
     }
 
     @Override
     public boolean moveObject(ITransaction transaction, String destinationPath, String sourcePath) {
         LOGGER.info("moveObject, destinationPath={}, sourcePath={}", destinationPath, sourcePath);
-
+        if (inSharePatten.matcher(destinationPath).find() || inSharePatten.matcher(sourcePath).find()){
+            throw new WebdavException("共享目录不可写");
+        }
         PathInfo destinationPathInfo = aliYunDriverClientService.getPathInfo(destinationPath);
         PathInfo sourcePathInfo = aliYunDriverClientService.getPathInfo(sourcePath);
         // 名字相同，说明是移动目录

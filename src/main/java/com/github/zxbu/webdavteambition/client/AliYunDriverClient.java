@@ -1,6 +1,8 @@
 package com.github.zxbu.webdavteambition.client;
 
 import com.github.zxbu.webdavteambition.config.AliYunDriveProperties;
+import com.github.zxbu.webdavteambition.model.ShareTokenRequest;
+import com.github.zxbu.webdavteambition.model.result.ShareTokenResult;
 import com.github.zxbu.webdavteambition.util.JsonUtil;
 import net.sf.webdav.exceptions.WebdavException;
 import okhttp3.*;
@@ -18,6 +20,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +29,7 @@ public class AliYunDriverClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(AliYunDriverClient.class);
     private OkHttpClient okHttpClient;
     private AliYunDriveProperties aliYunDriveProperties;
+    private Map<String, ShareTokenResult> shareTokenMapping = new HashMap<>();
 
     public AliYunDriverClient(AliYunDriveProperties aliYunDriveProperties) {
 
@@ -141,10 +146,18 @@ public class AliYunDriverClient {
     }
 
     public String post(String url, Object body) {
+        return post(url, body, null, null);
+    }
+
+    public String post(String url, Object body, String shareId, String sharePassword) {
         String bodyAsJson = JsonUtil.toJson(body);
-        Request request = new Request.Builder()
+        Request.Builder requestBuilder = new Request.Builder()
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyAsJson))
-                .url(getTotalUrl(url)).build();
+                .url(getTotalUrl(url));
+        if (shareId != null){
+            requestBuilder.header("X-Share-Token", readShareToken(shareId, sharePassword));
+        }
+        Request request = requestBuilder.build();
         try (Response response = okHttpClient.newCall(request).execute()){
             LOGGER.info("post {}, body {}, code {}", url, bodyAsJson, response.code());
             if (!response.isSuccessful()) {
@@ -205,6 +218,21 @@ public class AliYunDriverClient {
             return url;
         }
         return aliYunDriveProperties.getUrl() + url;
+    }
+
+    public synchronized String readShareToken(String shareId, String sharePassword){
+        // shareKey 为 sharePassword == null ? shareId : shareId + ":" + sharePassword
+        ShareTokenResult result = shareTokenMapping.get(shareId + ":" + sharePassword);
+        if (result != null && result.getExpire_time().after(new Date())){
+            return result.getShare_token();
+        }
+        ShareTokenRequest request = new ShareTokenRequest();
+        request.setShare_id(shareId);
+        request.setShare_pwd(sharePassword == null ? "" : sharePassword);
+        String resultString = post("/share_link/get_share_token", request);
+        result = JsonUtil.readValue(resultString, ShareTokenResult.class);
+        shareTokenMapping.put(shareId, result);
+        return result.getShare_token();
     }
 
     private void deleteRefreshTokenFile() {

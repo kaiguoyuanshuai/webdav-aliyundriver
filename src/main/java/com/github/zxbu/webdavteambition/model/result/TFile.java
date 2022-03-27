@@ -20,6 +20,9 @@ public class TFile {
     private String url;
     private Long size;
     private String download_url;
+    private String share_id;
+    private String share_password;
+    private String origin_file_id;
 
     public Date getCreated_at() {
         return created_at;
@@ -147,5 +150,32 @@ public class TFile {
 
     public void setUpdated_at(Date updated_at) {
         this.updated_at = updated_at;
+    }
+
+    public String getShare_id() {
+        return share_id;
+    }
+
+    public TFile setShare_id(String share_id) {
+        this.share_id = share_id;
+        return this;
+    }
+
+    public String getOrigin_file_id() {
+        return origin_file_id;
+    }
+
+    public TFile setOrigin_file_id(String origin_file_id) {
+        this.origin_file_id = origin_file_id;
+        return this;
+    }
+
+    public String getShare_password() {
+        return share_password;
+    }
+
+    public TFile setShare_password(String share_password) {
+        this.share_password = share_password;
+        return this;
     }
 }
